@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Zombie Apocalypse</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Zombie Apocalypse</h1>
+
+    <div id="game">
+      <div id="player" class="stickman">
+        <div class="head"></div>
+        <div class="body"></div>
+        <div class="arm left-arm"></div>
+        <div class="arm right-arm"></div>
+        <div class="leg left-leg"></div>
+        <div class="leg right-leg"></div>
+      </div>
+      <div id="enemy" class="zombie walker"></div>
+    </div>
+
+    <div id="hud">
+      <div class="pill">
+        Wave: <span id="wave-text">1</span>
+      </div>
+      <div class="pill">
+        Level: <span id="level-text">1</span>
+      </div>
+      <div class="pill">
+        XP: <span id="xp-text">0 / 20</span>
+      </div>
+      <div class="pill">
+        Coins: <span id="coins-text">0</span>
+      </div>
+      <div class="pill wide" id="player-hp">
+        Player HP: 100 / 100
+      </div>
+      <div class="pill wide" id="enemy-hp">
+        Zombies left: 0
+      </div>
+    </div>
+
+    <div id="upgrade-panel" class="panel hidden">
+      <h2>Level Up! Choose an upgrade</h2>
+      <div class="button-row">
+        <button id="upgrade-damage">+5 Damage</button>
+        <button id="upgrade-speed">+0.8 Speed</button>
+        <button id="upgrade-maxhp">+20 Max HP &amp; Heal</button>
+      </div>
+    </div>
+
+    <div id="shop-panel" class="panel hidden">
+      <h2>Safe Room Shop</h2>
+      <p>Spend coins before the next wave.</p>
+      <div class="button-row">
+        <button id="shop-heal">Heal 50 HP (20c)</button>
+        <button id="shop-fullheal">Full Heal (40c)</button>
+        <button id="shop-dmg">+5 Damage (30c)</button>
+      </div>
+      <div class="button-row">
+        <button id="shop-speed">+1 Speed (25c)</button>
+        <button id="shop-multishot">+1 Bullet (35c)</button>
+        <button id="shop-headshot">+5% Headshot (30c)</button>
+      </div>
+      <button id="shop-start" class="primary">Start Next Wave</button>
+    </div>
+
+    <p id="controls">
+      Controls: W A S D to move, J to melee, K to shoot. Clear zombies to open
+      the shop.
+    </p>
+
+    <script src="game.js"></script>
+  </body>
+</html>

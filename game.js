@@ -1,0 +1,548 @@
+console.log("fullscreen zombie game with gun + orbs loaded");
+
+let arenaWidth = 900;
+let arenaHeight = 600;
+const STICKMAN_WIDTH = 32;
+const STICKMAN_HEIGHT = 80;
+
+let player = {
+  x: 200,
+  y: 300,
+  hp: 100,
+  maxHp: 100,
+  speed: 4,
+  damage: 15,
+  level: 1,
+  xp: 0,
+  xpToNext: 20,
+  coins: 0,
+  bulletsPerShot: 1,
+  headshotChance: 0.1,
+  facing: 1,
+};
+
+let zombies = [];
+let currentWave = 1;
+let bullets = [];
+const BULLET_SPEED = 8;
+const BULLET_LIFETIME = 1200;
+
+let orbs = [];
+const ORB_RADIUS = 6;
+
+const playerEl = document.getElementById("player");
+const enemyTemplate = document.getElementById("enemy");
+enemyTemplate.style.display = "none";
+const gameEl = document.getElementById("game");
+
+const playerHpEl = document.getElementById("player-hp");
+const enemyHpEl = document.getElementById("enemy-hp");
+const waveText = document.getElementById("wave-text");
+const levelText = document.getElementById("level-text");
+const xpText = document.getElementById("xp-text");
+const coinsText = document.getElementById("coins-text");
+
+const upgradePanel = document.getElementById("upgrade-panel");
+const btnDamage = document.getElementById("upgrade-damage");
+const btnSpeed = document.getElementById("upgrade-speed");
+const btnMaxHp = document.getElementById("upgrade-maxhp");
+
+const shopPanel = document.getElementById("shop-panel");
+const shopHealBtn = document.getElementById("shop-heal");
+const shopFullHealBtn = document.getElementById("shop-fullheal");
+const shopDmgBtn = document.getElementById("shop-dmg");
+const shopSpeedBtn = document.getElementById("shop-speed");
+const shopMultishotBtn = document.getElementById("shop-multishot");
+const shopHeadshotBtn = document.getElementById("shop-headshot");
+const shopStartBtn = document.getElementById("shop-start");
+
+let keys = {};
+window.addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+});
+window.addEventListener("keyup", (e) => {
+  const k = e.key.toLowerCase();
+  keys[k] = false;
+});
+
+let isMeleeAttacking = false;
+let lastMeleeTime = 0;
+const meleeCooldown = 250;
+
+let lastShotTime = 0;
+const shootCooldown = 200;
+
+function updateArenaSize() {
+  const rect = gameEl.getBoundingClientRect();
+  arenaWidth = rect.width;
+  arenaHeight = rect.height;
+}
+
+function stickOverlap(ax, ay, bx, by) {
+  return (
+    Math.abs(ax - bx) < STICKMAN_WIDTH &&
+    Math.abs(ay - by) < STICKMAN_HEIGHT
+  );
+}
+
+function bulletHitsZombie(bx, by, zx, zy) {
+  return (
+    Math.abs(bx - zx) < STICKMAN_WIDTH / 2 &&
+    Math.abs(by - zy) < STICKMAN_HEIGHT / 2
+  );
+}
+
+function createZombie(wave, x, y) {
+  const r = Math.random();
+  let type = "walker";
+
+  if (r < 0.2) type = "runner";
+  else if (r > 0.8) type = "tank";
+
+  let hp, speed, damage;
+
+  if (type === "walker") {
+    hp = 25 + wave * 12;
+    speed = 1.2 + wave * 0.2;
+    damage = 4 + wave * 0.6;
+  } else if (type === "runner") {
+    hp = 15 + wave * 8;
+    speed = 2.2 + wave * 0.3;
+    damage = 3 + wave * 0.4;
+  } else if (type === "tank") {
+    hp = 45 + wave * 20;
+    speed = 0.8 + wave * 0.1;
+    damage = 7 + wave * 0.8;
+  }
+
+  const zEl = enemyTemplate.cloneNode(true);
+  zEl.id = "";
+  zEl.classList.add("zombie");
+  zEl.classList.add(type);
+  zEl.style.display = "block";
+  gameEl.appendChild(zEl);
+
+  return {
+    x,
+    y,
+    hp,
+    maxHp: hp,
+    speed,
+    damage,
+    type,
+    el: zEl,
+  };
+}
+
+function spawnWave(wave) {
+  zombies.forEach((z) => gameEl.removeChild(z.el));
+  zombies = [];
+
+  const count = 2 + wave;
+  for (let i = 0; i < count; i++) {
+    const edge = Math.floor(Math.random() * 4);
+    let x, y;
+    if (edge === 0) {
+      x = Math.random() * (arenaWidth - STICKMAN_WIDTH) + STICKMAN_WIDTH / 2;
+      y = STICKMAN_HEIGHT / 2;
+    } else if (edge === 1) {
+      x = Math.random() * (arenaWidth - STICKMAN_WIDTH) + STICKMAN_WIDTH / 2;
+      y = arenaHeight - STICKMAN_HEIGHT / 2 - 10;
+    } else if (edge === 2) {
+      x = STICKMAN_WIDTH / 2;
+      y =
+        Math.random() * (arenaHeight - STICKMAN_HEIGHT - 40) +
+        40 +
+        STICKMAN_HEIGHT / 2;
+    } else {
+      x = arenaWidth - STICKMAN_WIDTH / 2 - 10;
+      y =
+        Math.random() * (arenaHeight - STICKMAN_HEIGHT - 40) +
+        40 +
+        STICKMAN_HEIGHT / 2;
+    }
+
+    const zombie = createZombie(wave, x, y);
+    zombies.push(zombie);
+  }
+
+  waveText.textContent = wave;
+  updateEnemyCount();
+}
+
+function updateEnemyCount() {
+  enemyHpEl.textContent = "Zombies left: " + zombies.length;
+}
+
+function giveXpAndCoins() {
+  const xpGain = 10;
+  const coinGain = 5;
+  player.xp += xpGain;
+  player.coins += coinGain;
+  coinsText.textContent = player.coins;
+
+  while (player.xp >= player.xpToNext) {
+    player.xp -= player.xpToNext;
+    levelUp();
+  }
+  xpText.textContent = player.xp + " / " + player.xpToNext;
+}
+
+function levelUp() {
+  player.level += 1;
+  player.xpToNext = Math.round(player.xpToNext * 1.5);
+  levelText.textContent = player.level;
+  upgradePanel.classList.remove("hidden");
+}
+
+btnDamage.onclick = () => {
+  player.damage += 5;
+  closeUpgradePanel();
+};
+btnSpeed.onclick = () => {
+  player.speed += 0.8;
+  closeUpgradePanel();
+};
+btnMaxHp.onclick = () => {
+  player.maxHp += 20;
+  player.hp = player.maxHp;
+  closeUpgradePanel();
+};
+
+function closeUpgradePanel() {
+  upgradePanel.classList.add("hidden");
+}
+
+function openShop() {
+  shopPanel.classList.remove("hidden");
+}
+
+function closeShopAndStartNextWave() {
+  shopPanel.classList.add("hidden");
+  currentWave += 1;
+  spawnWave(currentWave);
+}
+
+shopHealBtn.onclick = () => {
+  const cost = 20;
+  if (player.coins >= cost) {
+    player.coins -= cost;
+    player.hp = Math.min(player.maxHp, player.hp + 50);
+    coinsText.textContent = player.coins;
+  }
+};
+
+shopFullHealBtn.onclick = () => {
+  const cost = 40;
+  if (player.coins >= cost) {
+    player.coins -= cost;
+    player.hp = player.maxHp;
+    coinsText.textContent = player.coins;
+  }
+};
+
+shopDmgBtn.onclick = () => {
+  const cost = 30;
+  if (player.coins >= cost) {
+    player.coins -= cost;
+    player.damage += 5;
+    coinsText.textContent = player.coins;
+  }
+};
+
+shopSpeedBtn.onclick = () => {
+  const cost = 25;
+  if (player.coins >= cost) {
+    player.coins -= cost;
+    player.speed += 1;
+    coinsText.textContent = player.coins;
+  }
+};
+
+shopMultishotBtn.onclick = () => {
+  const cost = 35;
+  if (player.coins >= cost) {
+    player.coins -= cost;
+    player.bulletsPerShot += 1;
+    coinsText.textContent = player.coins;
+  }
+};
+
+shopHeadshotBtn.onclick = () => {
+  const cost = 30;
+  if (player.coins >= cost) {
+    player.coins -= cost;
+    player.headshotChance = Math.min(
+      0.9,
+      player.headshotChance + 0.05
+    );
+    coinsText.textContent = player.coins;
+  }
+};
+
+shopStartBtn.onclick = () => {
+  closeShopAndStartNextWave();
+};
+
+function spawnBullets() {
+  const now = performance.now();
+  if (now - lastShotTime < shootCooldown) return;
+  lastShotTime = now;
+
+  const baseAngle = player.facing === 1 ? 0 : Math.PI;
+  const spread = 0.25;
+
+  const count = player.bulletsPerShot;
+  for (let i = 0; i < count; i++) {
+    const t = count === 1 ? 0 : (i / (count - 1)) * 2 - 1;
+    const angle = baseAngle + t * spread;
+
+    const bulletEl = document.createElement("div");
+    bulletEl.className = "bullet";
+    gameEl.appendChild(bulletEl);
+
+    const bullet = {
+      x: player.x,
+      y: player.y - STICKMAN_HEIGHT / 3,
+      vx: Math.cos(angle) * BULLET_SPEED,
+      vy: Math.sin(angle) * BULLET_SPEED,
+      spawnTime: now,
+      el: bulletEl,
+    };
+    bullets.push(bullet);
+  }
+}
+
+function spawnOrb(x, y) {
+  const orbEl = document.createElement("div");
+  orbEl.className = "xp-orb";
+  gameEl.appendChild(orbEl);
+
+  const orb = {
+    x,
+    y,
+    el: orbEl,
+  };
+  orbs.push(orb);
+}
+
+const extraStyle = document.createElement("style");
+extraStyle.textContent = `
+  .bullet {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #6bff9b;
+    box-shadow: 0 0 8px #6bff9b;
+    z-index: 3;
+  }
+  .xp-orb {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #3cff93;
+    box-shadow: 0 0 10px #3cff93;
+    z-index: 2;
+  }
+`;
+document.head.appendChild(extraStyle);
+
+function update(timestamp) {
+  const upgradeOpen = !upgradePanel.classList.contains("hidden");
+  const shopOpen = !shopPanel.classList.contains("hidden");
+
+  if (!upgradeOpen && !shopOpen) {
+    if (keys["a"]) {
+      player.x -= player.speed;
+      player.facing = -1;
+    }
+    if (keys["d"]) {
+      player.x += player.speed;
+      player.facing = 1;
+    }
+    if (keys["w"]) player.y -= player.speed;
+    if (keys["s"]) player.y += player.speed;
+
+    const halfW = STICKMAN_WIDTH / 2;
+    const halfH = STICKMAN_HEIGHT / 2;
+    if (player.x < halfW) player.x = halfW;
+    if (player.x > arenaWidth - halfW) player.x = arenaWidth - halfW;
+    if (player.y < 40 + halfH) player.y = 40 + halfH;
+    if (player.y > arenaHeight - halfH - 10)
+      player.y = arenaHeight - halfH - 10;
+
+    if (keys["j"]) {
+      if (!isMeleeAttacking && timestamp - lastMeleeTime > meleeCooldown) {
+        isMeleeAttacking = true;
+        lastMeleeTime = timestamp;
+        playerEl.classList.add("attack-flash");
+
+        const inRange = zombies.filter((z) =>
+          stickOverlap(player.x, player.y, z.x, z.y)
+        );
+
+        inRange.sort(
+          (a, b) =>
+            Math.hypot(a.x - player.x, a.y - player.y) -
+            Math.hypot(b.x - player.x, b.y - player.y)
+        );
+
+        const hits = Math.min(1, inRange.length);
+        for (let i = 0; i < hits; i++) {
+          const z = inRange[i];
+          const isHeadshot = Math.random() < player.headshotChance;
+          const dmg = isHeadshot ? player.damage * 2 : player.damage;
+          z.hp -= dmg;
+        }
+      }
+    } else {
+      isMeleeAttacking = false;
+      playerEl.classList.remove("attack-flash");
+    }
+
+    if (keys["k"]) {
+      spawnBullets();
+    }
+
+    zombies.forEach((z) => {
+      const dx = player.x - z.x;
+      const dy = player.y - z.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const nx = dx / dist;
+      const ny = dy / dist;
+
+      z.x += nx * z.speed;
+      z.y += ny * z.speed;
+
+      if (stickOverlap(player.x, player.y, z.x, z.y)) {
+        player.hp -= z.damage * 0.01;
+      }
+    });
+
+    const now = performance.now();
+    bullets = bullets.filter((b) => {
+      const age = now - b.spawnTime;
+      if (
+        age > BULLET_LIFETIME ||
+        b.x < 0 ||
+        b.x > arenaWidth ||
+        b.y < 0 ||
+        b.y > arenaHeight
+      ) {
+        gameEl.removeChild(b.el);
+        return false;
+      }
+
+      b.x += b.vx;
+      b.y += b.vy;
+
+      let hitSomething = false;
+      for (const z of zombies) {
+        if (bulletHitsZombie(b.x, b.y, z.x, z.y)) {
+          const isHeadshot = Math.random() < player.headshotChance;
+          const dmg = isHeadshot ? player.damage * 2 : player.damage;
+          z.hp -= dmg;
+          hitSomething = true;
+          break;
+        }
+      }
+
+      if (hitSomething) {
+        gameEl.removeChild(b.el);
+        return false;
+      }
+
+      b.el.style.left = b.x - 3 + "px";
+      b.el.style.top = b.y - 3 + "px";
+      return true;
+    });
+
+    zombies = zombies.filter((z) => {
+      if (z.hp <= 0) {
+        gameEl.removeChild(z.el);
+        spawnOrb(z.x, z.y);
+        return false;
+      }
+      return true;
+    });
+
+    updateEnemyCount();
+
+    orbs = orbs.filter((orb) => {
+      const dx = player.x - orb.x;
+      const dy = player.y - orb.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const nx = dx / dist;
+      const ny = dy / dist;
+
+      if (dist < 60) {
+        orb.x += nx * 2.5;
+        orb.y += ny * 2.5;
+      }
+
+      if (dist < 16) {
+        gameEl.removeChild(orb.el);
+        giveXpAndCoins();
+        return false;
+      }
+
+      orb.el.style.left = orb.x - ORB_RADIUS + "px";
+      orb.el.style.top = orb.y - ORB_RADIUS + "px";
+      return true;
+    });
+
+    if (zombies.length === 0 && !shopOpen && orbs.length === 0) {
+      openShop();
+    }
+  }
+
+  playerEl.style.left = player.x - STICKMAN_WIDTH / 2 + "px";
+  playerEl.style.top = player.y - STICKMAN_HEIGHT + "px";
+
+  zombies.forEach((z) => {
+    z.el.style.left = z.x - STICKMAN_WIDTH / 2 + "px";
+    z.el.style.top = z.y - STICKMAN_HEIGHT + "px";
+
+    if (z.x < player.x) {
+      z.el.style.transform = "scaleX(1)";
+    } else {
+      z.el.style.transform = "scaleX(-1)";
+    }
+  });
+
+  playerHpEl.textContent =
+    "Player HP: " +
+    Math.max(0, Math.round(player.hp)) +
+    " / " +
+    player.maxHp;
+
+  if (player.hp <= 0) {
+    alert("You were eaten! Refresh to try again.");
+    return;
+  }
+
+  requestAnimationFrame(update);
+}
+
+function init() {
+  updateArenaSize();
+  player.x = arenaWidth / 2;
+  player.y = arenaHeight / 2 + 60;
+
+  playerHpEl.textContent =
+    "Player HP: " + player.hp + " / " + player.maxHp;
+  levelText.textContent = player.level;
+  xpText.textContent = player.xp + " / " + player.xpToNext;
+  coinsText.textContent = player.coins;
+
+  spawnWave(currentWave);
+  requestAnimationFrame(update);
+}
+
+window.addEventListener("load", init);
+window.addEventListener("resize", () => {
+  updateArenaSize();
+});

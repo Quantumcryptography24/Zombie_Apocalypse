@@ -1,0 +1,237 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #050907;
+  color: #e9f7ef;
+  text-align: center;
+  overflow: hidden;
+}
+
+h1 {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 32px;
+  letter-spacing: 2px;
+  z-index: 10;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(circle at top, #1a3323 0, #050907 60%);
+  border: 3px solid #6bff9b;
+  border-radius: 12px;
+  margin: 8px;
+  overflow: hidden;
+}
+
+.stickman {
+  position: absolute;
+  width: 32px;
+  height: 80px;
+}
+
+#player .head,
+#player .body,
+#player .arm,
+#player .leg {
+  background: #53b5ff;
+}
+
+.stickman .head {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.stickman .body {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 4px;
+  height: 32px;
+  border-radius: 3px;
+  transform: translateX(-50%);
+}
+
+.stickman .arm {
+  position: absolute;
+  top: 22px;
+  width: 24px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.stickman .left-arm {
+  left: 50%;
+  transform: translateX(-100%) rotate(-18deg);
+}
+
+.stickman .right-arm {
+  left: 50%;
+  transform: rotate(18deg);
+}
+
+.stickman .leg {
+  position: absolute;
+  top: 46px;
+  width: 3px;
+  height: 32px;
+  border-radius: 2px;
+}
+
+.stickman .left-leg {
+  left: 47%;
+  transform: rotate(10deg);
+}
+
+.stickman .right-leg {
+  left: 53%;
+  transform: rotate(-10deg);
+}
+
+.attack-flash .head,
+.attack-flash .body,
+.attack-flash .arm,
+.attack-flash .leg {
+  box-shadow: 0 0 10px 3px rgba(255, 255, 0, 0.9);
+}
+
+.zombie {
+  position: absolute;
+  width: 60px;
+  height: 80px;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.zombie.walker {
+  background-image: url("./zombie_reg_2.png");
+}
+
+.zombie.runner {
+  background-image: url("./zombie_runner.png");
+}
+
+.zombie.tank {
+  background-image: url("./zombie_tank.png");
+}
+
+
+#hud {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  z-index: 5;
+}
+
+.pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0f2417, #10341f);
+  border: 1px solid #3cff93;
+  font-size: 11px;
+}
+
+.pill.wide {
+  min-width: 180px;
+}
+
+.panel {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  transform: translate(-50%, -50%);
+  width: min(480px, 90vw);
+  padding: 10px 16px 14px;
+  border-radius: 16px;
+  background: rgba(4, 20, 11, 0.95);
+  border: 1px solid #2fe37d;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+  z-index: 8;
+}
+
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.panel p {
+  margin: 0 0 10px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+button {
+  border: none;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  color: #e9f7ef;
+  background: linear-gradient(135deg, #0d3b24, #166d3e);
+  border: 1px solid #3cff93;
+  transition: transform 0.08s ease, box-shadow 0.08s ease,
+    background 0.08s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(60, 255, 147, 0.7);
+  background: linear-gradient(135deg, #179152, #1abf6a);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+button.primary {
+  padding-inline: 22px;
+}
+
+.hidden {
+  display: none;
+}
+
+#controls {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  opacity: 0.85;
+  z-index: 5;
+}
