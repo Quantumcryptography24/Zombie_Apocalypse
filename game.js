@@ -355,16 +355,16 @@ function update(timestamp) {
   const shopOpen = !shopPanel.classList.contains("hidden");
 
   if (!upgradeOpen && !shopOpen) {
-    if (keys["a"] or ["left"]) {
+    if (keys["a"]) {
       player.x -= player.speed;
       player.facing = -1;
     }
-    if (keys["d"] or ["right"]) {
+    if (keys["d"]) {
       player.x += player.speed;
       player.facing = 1;
     }
-    if (keys["w"] or ["up"]) player.y -= player.speed;
-    if (keys["s"] or ["down"]) player.y += player.speed;
+    if (keys["w"]) player.y -= player.speed;
+    if (keys["s"]) player.y += player.speed;
 
     const halfW = STICKMAN_WIDTH / 2;
     const halfH = STICKMAN_HEIGHT / 2;
