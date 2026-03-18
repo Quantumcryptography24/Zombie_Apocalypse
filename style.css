@@ -46,8 +46,8 @@ h1 {
   background-image: url("./Character_skin.png");
   background-size: contain;
   background-repeat: no-repeat;
+  transform-origin: center center; 
 }
-
 .sword {
   position: absolute;
   width: 60px;
