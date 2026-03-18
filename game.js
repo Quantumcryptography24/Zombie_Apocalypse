@@ -2,8 +2,9 @@ console.log("fullscreen zombie game with gun + orbs loaded");
 
 let arenaWidth = 900;
 let arenaHeight = 600;
-const STICKMAN_WIDTH = 32;
-const STICKMAN_HEIGHT = 80;
+const PLAYER_WIDTH = 60;
+const PLAYER_HEIGHT = 80;
+const PLAYER_HITBOX_OFFSET_Y = -20;
 
 let player = {
   x: 200,
@@ -21,8 +22,12 @@ let player = {
   facing: 1,
 };
 
+let shieldActive = false;
+let shieldEndTime = 0;
+
 let zombies = [];
 let currentWave = 1;
+let isGameOver = false;
 let bullets = [];
 const BULLET_SPEED = 8;
 const BULLET_LIFETIME = 1200;
@@ -30,10 +35,13 @@ const BULLET_LIFETIME = 1200;
 let orbs = [];
 const ORB_RADIUS = 6;
 
+// DOM
 const playerEl = document.getElementById("player");
+const swordEl = document.getElementById("sword");
 const enemyTemplate = document.getElementById("enemy");
 enemyTemplate.style.display = "none";
 const gameEl = document.getElementById("game");
+const shieldAuraEl = document.getElementById("shield-aura");
 
 const playerHpEl = document.getElementById("player-hp");
 const enemyHpEl = document.getElementById("enemy-hp");
@@ -56,6 +64,11 @@ const shopMultishotBtn = document.getElementById("shop-multishot");
 const shopHeadshotBtn = document.getElementById("shop-headshot");
 const shopStartBtn = document.getElementById("shop-start");
 
+const gameOverPanel = document.getElementById("game-over-panel");
+const gameOverText = document.getElementById("game-over-text");
+const restartBtn = document.getElementById("restart-btn");
+
+// input
 let keys = {};
 window.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
@@ -81,15 +94,15 @@ function updateArenaSize() {
 
 function stickOverlap(ax, ay, bx, by) {
   return (
-    Math.abs(ax - bx) < STICKMAN_WIDTH &&
-    Math.abs(ay - by) < STICKMAN_HEIGHT
+    Math.abs(ax - bx) < PLAYER_WIDTH &&
+    Math.abs(ay - by) < PLAYER_HEIGHT
   );
 }
 
 function bulletHitsZombie(bx, by, zx, zy) {
   return (
-    Math.abs(bx - zx) < STICKMAN_WIDTH / 2 &&
-    Math.abs(by - zy) < STICKMAN_HEIGHT / 2
+    Math.abs(bx - zx) < PLAYER_WIDTH / 2 &&
+    Math.abs(by - zy) < PLAYER_HEIGHT / 2
   );
 }
 
@@ -144,23 +157,23 @@ function spawnWave(wave) {
     const edge = Math.floor(Math.random() * 4);
     let x, y;
     if (edge === 0) {
-      x = Math.random() * (arenaWidth - STICKMAN_WIDTH) + STICKMAN_WIDTH / 2;
-      y = STICKMAN_HEIGHT / 2;
+      x = Math.random() * (arenaWidth - PLAYER_WIDTH) + PLAYER_WIDTH / 2;
+      y = PLAYER_HEIGHT / 2;
     } else if (edge === 1) {
-      x = Math.random() * (arenaWidth - STICKMAN_WIDTH) + STICKMAN_WIDTH / 2;
-      y = arenaHeight - STICKMAN_HEIGHT / 2 - 10;
+      x = Math.random() * (arenaWidth - PLAYER_WIDTH) + PLAYER_WIDTH / 2;
+      y = arenaHeight - PLAYER_HEIGHT / 2 - 10;
     } else if (edge === 2) {
-      x = STICKMAN_WIDTH / 2;
+      x = PLAYER_WIDTH / 2;
       y =
-        Math.random() * (arenaHeight - STICKMAN_HEIGHT - 40) +
+        Math.random() * (arenaHeight - PLAYER_HEIGHT - 40) +
         40 +
-        STICKMAN_HEIGHT / 2;
+        PLAYER_HEIGHT / 2;
     } else {
-      x = arenaWidth - STICKMAN_WIDTH / 2 - 10;
+      x = arenaWidth - PLAYER_WIDTH / 2 - 10;
       y =
-        Math.random() * (arenaHeight - STICKMAN_HEIGHT - 40) +
+        Math.random() * (arenaHeight - PLAYER_HEIGHT - 40) +
         40 +
-        STICKMAN_HEIGHT / 2;
+        PLAYER_HEIGHT / 2;
     }
 
     const zombie = createZombie(wave, x, y);
@@ -304,24 +317,25 @@ function spawnBullets() {
 
     const bullet = {
       x: player.x,
-      y: player.y - STICKMAN_HEIGHT / 3,
+      y: player.y + PLAYER_HITBOX_OFFSET_Y,
       vx: Math.cos(angle) * BULLET_SPEED,
       vy: Math.sin(angle) * BULLET_SPEED,
-      spawnTime: now,
+      spawnTime: performance.now(),
       el: bulletEl,
     };
     bullets.push(bullet);
   }
 }
 
-function spawnOrb(x, y) {
+function spawnOrb(x, y, type = "xp") {
   const orbEl = document.createElement("div");
-  orbEl.className = "xp-orb";
+  orbEl.className = type === "shield" ? "shield-orb" : "xp-orb";
   gameEl.appendChild(orbEl);
 
   const orb = {
     x,
     y,
+    type,
     el: orbEl,
   };
   orbs.push(orb);
@@ -347,12 +361,45 @@ extraStyle.textContent = `
     box-shadow: 0 0 10px #3cff93;
     z-index: 2;
   }
+  .shield-orb {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #4fd5ff;
+    box-shadow: 0 0 10px #4fd5ff;
+    z-index: 2;
+  }
+  .shield-aura {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid #4fd5ff;
+    box-shadow: 0 0 18px #4fd5ff;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .hidden {
+    display: none;
+  }
 `;
 document.head.appendChild(extraStyle);
 
 function update(timestamp) {
   const upgradeOpen = !upgradePanel.classList.contains("hidden");
   const shopOpen = !shopPanel.classList.contains("hidden");
+
+  // if game over, freeze gameplay
+  if (isGameOver) {
+    playerHpEl.textContent =
+      "Player HP: " +
+      Math.max(0, Math.round(player.hp)) +
+      " / " +
+      player.maxHp;
+    requestAnimationFrame(update);
+    return;
+  }
 
   if (!upgradeOpen && !shopOpen) {
     if (keys["a"]) {
@@ -366,8 +413,8 @@ function update(timestamp) {
     if (keys["w"]) player.y -= player.speed;
     if (keys["s"]) player.y += player.speed;
 
-    const halfW = STICKMAN_WIDTH / 2;
-    const halfH = STICKMAN_HEIGHT / 2;
+    const halfW = PLAYER_WIDTH / 2;
+    const halfH = PLAYER_HEIGHT / 2;
     if (player.x < halfW) player.x = halfW;
     if (player.x > arenaWidth - halfW) player.x = arenaWidth - halfW;
     if (player.y < 40 + halfH) player.y = 40 + halfH;
@@ -378,29 +425,8 @@ function update(timestamp) {
       if (!isMeleeAttacking && timestamp - lastMeleeTime > meleeCooldown) {
         isMeleeAttacking = true;
         lastMeleeTime = timestamp;
-        playerEl.classList.add("attack-flash");
-
-        const inRange = zombies.filter((z) =>
-          stickOverlap(player.x, player.y, z.x, z.y)
-        );
-
-        inRange.sort(
-          (a, b) =>
-            Math.hypot(a.x - player.x, a.y - player.y) -
-            Math.hypot(b.x - player.x, b.y - player.y)
-        );
-
-        const hits = Math.min(1, inRange.length);
-        for (let i = 0; i < hits; i++) {
-          const z = inRange[i];
-          const isHeadshot = Math.random() < player.headshotChance;
-          const dmg = isHeadshot ? player.damage * 2 : player.damage;
-          z.hp -= dmg;
-        }
+        swordEl._didHit = false;
       }
-    } else {
-      isMeleeAttacking = false;
-      playerEl.classList.remove("attack-flash");
     }
 
     if (keys["k"]) {
@@ -409,7 +435,7 @@ function update(timestamp) {
 
     zombies.forEach((z) => {
       const dx = player.x - z.x;
-      const dy = player.y - z.y;
+      const dy = (player.y + PLAYER_HITBOX_OFFSET_Y) - z.y;
       const dist = Math.hypot(dx, dy) || 1;
       const nx = dx / dist;
       const ny = dy / dist;
@@ -417,7 +443,10 @@ function update(timestamp) {
       z.x += nx * z.speed;
       z.y += ny * z.speed;
 
-      if (stickOverlap(player.x, player.y, z.x, z.y)) {
+      if (
+        !shieldActive &&
+        stickOverlap(player.x, player.y + PLAYER_HITBOX_OFFSET_Y, z.x, z.y)
+      ) {
         player.hp -= z.damage * 0.01;
       }
     });
@@ -443,7 +472,9 @@ function update(timestamp) {
       for (const z of zombies) {
         if (bulletHitsZombie(b.x, b.y, z.x, z.y)) {
           const isHeadshot = Math.random() < player.headshotChance;
-          const dmg = isHeadshot ? player.damage * 2 : player.damage;
+          const dmg = isHeadshot
+            ? player.damage * 3
+            : player.damage * 1.5;
           z.hp -= dmg;
           hitSomething = true;
           break;
@@ -463,7 +494,13 @@ function update(timestamp) {
     zombies = zombies.filter((z) => {
       if (z.hp <= 0) {
         gameEl.removeChild(z.el);
-        spawnOrb(z.x, z.y);
+
+        if (Math.random() < 0.15) {
+          spawnOrb(z.x, z.y, "shield");
+        } else {
+          spawnOrb(z.x, z.y, "xp");
+        }
+
         return false;
       }
       return true;
@@ -473,7 +510,7 @@ function update(timestamp) {
 
     orbs = orbs.filter((orb) => {
       const dx = player.x - orb.x;
-      const dy = player.y - orb.y;
+      const dy = (player.y + PLAYER_HITBOX_OFFSET_Y) - orb.y;
       const dist = Math.hypot(dx, dy) || 1;
       const nx = dx / dist;
       const ny = dy / dist;
@@ -485,7 +522,15 @@ function update(timestamp) {
 
       if (dist < 16) {
         gameEl.removeChild(orb.el);
-        giveXpAndCoins();
+
+        if (orb.type === "shield") {
+          shieldActive = true;
+          shieldEndTime = performance.now() + 10000;
+          shieldAuraEl.classList.remove("hidden");
+        } else {
+          giveXpAndCoins();
+        }
+
         return false;
       }
 
@@ -499,12 +544,63 @@ function update(timestamp) {
     }
   }
 
-  playerEl.style.left = player.x - STICKMAN_WIDTH / 2 + "px";
-  playerEl.style.top = player.y - STICKMAN_HEIGHT + "px";
+  playerEl.style.left = player.x - PLAYER_WIDTH / 2 + "px";
+  playerEl.style.top = player.y - PLAYER_HEIGHT + "px";
+
+  if (shieldActive) {
+    shieldAuraEl.style.left = player.x - 60 + "px";
+    shieldAuraEl.style.top =
+      player.y + PLAYER_HITBOX_OFFSET_Y - 60 + "px";
+  }
+
+  if (isMeleeAttacking) {
+    const attackPhase = (timestamp - lastMeleeTime) / meleeCooldown;
+    const clamped = Math.min(attackPhase, 1);
+    const baseAngle = player.facing === 1 ? -60 : 240;
+    const swing =
+      120 * clamped * (player.facing === 1 ? 1 : -1);
+    const angle = baseAngle + swing;
+
+    swordEl.style.display = "block";
+
+    const offsetX = player.facing === 1 ? 30 : -30;
+    const offsetY = -10;
+    const swordX = player.x + offsetX;
+    const swordY =
+      player.y +
+      PLAYER_HITBOX_OFFSET_Y -
+      PLAYER_HEIGHT / 2 +
+      offsetY;
+
+    swordEl.style.left = swordX + "px";
+    swordEl.style.top = swordY + "px";
+    swordEl.style.transform = `rotate(${angle}deg)`;
+
+    if (!swordEl._didHit) {
+      const swordRange = 40;
+      zombies.forEach((z) => {
+        const dx = z.x - swordX;
+        const dy = z.y - swordY;
+        const dist = Math.hypot(dx, dy);
+        if (dist < swordRange) {
+          const dmg = player.damage * 1.8;
+          z.hp -= dmg;
+        }
+      });
+      swordEl._didHit = true;
+    }
+
+    if (attackPhase >= 1) {
+      isMeleeAttacking = false;
+      swordEl.style.display = "none";
+    }
+  } else {
+    swordEl._didHit = false;
+  }
 
   zombies.forEach((z) => {
-    z.el.style.left = z.x - STICKMAN_WIDTH / 2 + "px";
-    z.el.style.top = z.y - STICKMAN_HEIGHT + "px";
+    z.el.style.left = z.x - PLAYER_WIDTH / 2 + "px";
+    z.el.style.top = z.y - PLAYER_HEIGHT + "px";
 
     if (z.x < player.x) {
       z.el.style.transform = "scaleX(1)";
@@ -519,12 +615,29 @@ function update(timestamp) {
     " / " +
     player.maxHp;
 
-  if (player.hp <= 0) {
-    alert("You were eaten! Refresh to try again.");
-    return;
+  if (shieldActive && performance.now() > shieldEndTime) {
+    shieldActive = false;
+    shieldAuraEl.classList.add("hidden");
+  }
+
+  // game over check
+  if (player.hp <= 0 && !isGameOver) {
+    isGameOver = true;
+    showGameOver();
   }
 
   requestAnimationFrame(update);
+}
+
+function showGameOver() {
+  console.log("showGameOver called");
+  if (!gameOverPanel || !gameOverText) return;
+  gameOverText.textContent = `You were eaten on wave ${currentWave}.`;
+  gameOverPanel.classList.remove("hidden");
+}
+
+function restartGame() {
+  window.location.reload();
 }
 
 function init() {
@@ -539,6 +652,11 @@ function init() {
   coinsText.textContent = player.coins;
 
   spawnWave(currentWave);
+
+  if (restartBtn) {
+    restartBtn.onclick = restartGame;
+  }
+
   requestAnimationFrame(update);
 }
 
