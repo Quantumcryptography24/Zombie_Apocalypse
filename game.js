@@ -35,8 +35,8 @@ const BULLET_LIFETIME = 1200;
 let orbs = [];
 const ORB_RADIUS = 6;
 
-// DOM
 const playerEl = document.getElementById("player");
+const gunEl = document.getElementById("gun");
 const swordEl = document.getElementById("sword");
 const enemyTemplate = document.getElementById("enemy");
 enemyTemplate.style.display = "none";
@@ -68,7 +68,6 @@ const gameOverPanel = document.getElementById("game-over-panel");
 const gameOverText = document.getElementById("game-over-text");
 const restartBtn = document.getElementById("restart-btn");
 
-// input
 let keys = {};
 window.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
@@ -390,7 +389,6 @@ function update(timestamp) {
   const upgradeOpen = !upgradePanel.classList.contains("hidden");
   const shopOpen = !shopPanel.classList.contains("hidden");
 
-  // if game over, freeze gameplay
   if (isGameOver) {
     playerHpEl.textContent =
       "Player HP: " +
@@ -547,6 +545,19 @@ function update(timestamp) {
   playerEl.style.left = player.x - PLAYER_WIDTH / 2 + "px";
   playerEl.style.top = player.y - PLAYER_HEIGHT + "px";
 
+if (gunEl) {
+  const offsetX = player.facing === 1 ? 20 : -20;
+  const offsetY = -30;
+  const gunX = player.x + offsetX;
+  const gunY = player.y + PLAYER_HITBOX_OFFSET_Y + offsetY;
+
+  gunEl.style.left = gunX + "px";
+  gunEl.style.top = gunY + "px";
+
+  const angleDeg = player.facing === 1 ? 0 : 180;
+  gunEl.style.transform = `rotate(${angleDeg}deg)`;
+}
+
   if (shieldActive) {
     shieldAuraEl.style.left = player.x - 60 + "px";
     shieldAuraEl.style.top =
@@ -620,7 +631,6 @@ function update(timestamp) {
     shieldAuraEl.classList.add("hidden");
   }
 
-  // game over check
   if (player.hp <= 0 && !isGameOver) {
     isGameOver = true;
     showGameOver();
