@@ -545,11 +545,18 @@ function update(timestamp) {
       openShop();
     }
   }
+playerEl.style.left = player.x - PLAYER_WIDTH / 2 + "px";
+playerEl.style.top = player.y - PLAYER_HEIGHT + "px";
+playerEl.style.scale = player.facing === 1 ? "1" : "-1 1";
 
-if (player.facing === 1) {
-  playerEl.style.transform = "scaleX(1)";
-} else {
-  playerEl.style.transform = "scaleX(-1)";
+
+if (keys["a"]) {
+  player.x -= player.speed;
+  player.facing = -1;
+}
+if (keys["d"]) {
+  player.x += player.speed;
+  player.facing = 1;
 }
 
 
