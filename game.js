@@ -4,7 +4,9 @@ let arenaWidth = 900;
 let arenaHeight = 600;
 const PLAYER_WIDTH = 60;
 const PLAYER_HEIGHT = 80;
-const PLAYER_HITBOX_OFFSET_Y = -20;
+const PLAYER_HITBOX_OFFSET_Y = -40;
+const ZOMBIE_HITBOX_OFFSET_Y = -20;
+
 
 let player = {
   x: 200,
@@ -99,11 +101,13 @@ function stickOverlap(ax, ay, bx, by) {
 }
 
 function bulletHitsZombie(bx, by, zx, zy) {
+  const adjustedZy = zy + ZOMBIE_HITBOX_OFFSET_Y;
   return (
     Math.abs(bx - zx) < PLAYER_WIDTH / 2 &&
-    Math.abs(by - zy) < PLAYER_HEIGHT / 2
+    Math.abs(by - adjustedZy) < PLAYER_HEIGHT / 2
   );
 }
+
 
 function createZombie(wave, x, y) {
   const r = Math.random();
@@ -574,32 +578,34 @@ if (gunEl) {
 
     swordEl.style.display = "block";
 
-    const offsetX = player.facing === 1 ? 30 : -30;
-    const offsetY = -10;
-    const swordX = player.x + offsetX;
-    const swordY =
-      player.y +
-      PLAYER_HITBOX_OFFSET_Y -
-      PLAYER_HEIGHT / 2 +
-      offsetY;
+const offsetX = player.facing === 1 ? 30 : -30;
+const offsetY = 10; 
+const swordX = player.x + offsetX;
+const swordY =
+  player.y +
+  PLAYER_HITBOX_OFFSET_Y -
+  PLAYER_HEIGHT / 2 +
+  offsetY;
+
 
     swordEl.style.left = swordX + "px";
     swordEl.style.top = swordY + "px";
     swordEl.style.transform = `rotate(${angle}deg)`;
 
-    if (!swordEl._didHit) {
-      const swordRange = 40;
-      zombies.forEach((z) => {
-        const dx = z.x - swordX;
-        const dy = z.y - swordY;
-        const dist = Math.hypot(dx, dy);
-        if (dist < swordRange) {
-          const dmg = player.damage * 1.8;
-          z.hp -= dmg;
-        }
-      });
-      swordEl._didHit = true;
+if (!swordEl._didHit) {
+  const swordRange = 40;
+  zombies.forEach((z) => {
+    const dx = z.x - swordX;
+    const dy = (z.y + ZOMBIE_HITBOX_OFFSET_Y) - swordY;
+    const dist = Math.hypot(dx, dy);
+    if (dist < swordRange) {
+      const dmg = player.damage * 1.8;
+      z.hp -= dmg;
     }
+  });
+  swordEl._didHit = true;
+}
+
 
     if (attackPhase >= 1) {
       isMeleeAttacking = false;
