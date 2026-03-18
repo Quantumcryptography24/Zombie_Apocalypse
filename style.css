@@ -39,80 +39,25 @@ h1 {
   overflow: hidden;
 }
 
-.stickman {
+.player {
   position: absolute;
-  width: 32px;
+  width: 60px;
   height: 80px;
+  background-image: url("./Character_skin.png");
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 
-#player .head,
-#player .body,
-#player .arm,
-#player .leg {
-  background: #53b5ff;
-}
-
-.stickman .head {
+.sword {
   position: absolute;
-  top: 0;
-  left: 50%;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  transform: translateX(-50%);
-}
-
-.stickman .body {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  width: 4px;
-  height: 32px;
-  border-radius: 3px;
-  transform: translateX(-50%);
-}
-
-.stickman .arm {
-  position: absolute;
-  top: 22px;
-  width: 24px;
-  height: 3px;
-  border-radius: 2px;
-}
-
-.stickman .left-arm {
-  left: 50%;
-  transform: translateX(-100%) rotate(-18deg);
-}
-
-.stickman .right-arm {
-  left: 50%;
-  transform: rotate(18deg);
-}
-
-.stickman .leg {
-  position: absolute;
-  top: 46px;
-  width: 3px;
-  height: 32px;
-  border-radius: 2px;
-}
-
-.stickman .left-leg {
-  left: 47%;
-  transform: rotate(10deg);
-}
-
-.stickman .right-leg {
-  left: 53%;
-  transform: rotate(-10deg);
-}
-
-.attack-flash .head,
-.attack-flash .body,
-.attack-flash .arm,
-.attack-flash .leg {
-  box-shadow: 0 0 10px 3px rgba(255, 255, 0, 0.9);
+  width: 60px;
+  height: 60px;
+  background-image: url("./sword.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  transform-origin: 10px 30px;
+  pointer-events: none;
+  display: none;
 }
 
 .zombie {
@@ -122,6 +67,7 @@ h1 {
   background-size: contain;
   background-repeat: no-repeat;
 }
+
 .zombie.walker {
   background-image: url("./zombie_reg_2.png");
 }
@@ -133,7 +79,6 @@ h1 {
 .zombie.tank {
   background-image: url("./zombie_tank.png");
 }
-
 
 #hud {
   position: absolute;
@@ -234,4 +179,49 @@ button.primary {
   font-size: 11px;
   opacity: 0.85;
   z-index: 5;
+}
+
+.bullet {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6bff9b;
+  box-shadow: 0 0 8px #6bff9b;
+  z-index: 3;
+}
+
+.xp-orb {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3cff93;
+  box-shadow: 0 0 10px #3cff93;
+  z-index: 2;
+}
+
+.shield-orb {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-image: url("./shield.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  box-shadow: 0 0 10px #4fd5ff;
+  z-index: 2;
+}
+
+
+.shield-aura {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid #4fd5ff;
+  box-shadow: 0 0 18px #4fd5ff;
+  pointer-events: none;
+  z-index: 1;
 }
