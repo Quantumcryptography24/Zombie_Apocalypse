@@ -546,8 +546,12 @@ function update(timestamp) {
     }
   }
 
-  playerEl.style.left = player.x - PLAYER_WIDTH / 2 + "px";
-  playerEl.style.top = player.y - PLAYER_HEIGHT + "px";
+if (player.facing === 1) {
+  playerEl.style.transform = "scaleX(1)";
+} else {
+  playerEl.style.transform = "scaleX(-1)";
+}
+
 
 if (gunEl) {
   const offsetX = player.facing === 1 ? 20 : -20;
