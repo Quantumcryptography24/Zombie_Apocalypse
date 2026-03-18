@@ -7,7 +7,6 @@ const PLAYER_HEIGHT = 80;
 const PLAYER_HITBOX_OFFSET_Y = -40;
 const ZOMBIE_HITBOX_OFFSET_Y = -20;
 
-
 let player = {
   x: 200,
   y: 300,
@@ -36,6 +35,9 @@ const BULLET_LIFETIME = 1200;
 
 let orbs = [];
 const ORB_RADIUS = 6;
+
+let gunTipX = 0;
+let gunTipY = 0;
 
 const playerEl = document.getElementById("player");
 const gunEl = document.getElementById("gun");
@@ -107,7 +109,6 @@ function bulletHitsZombie(bx, by, zx, zy) {
     Math.abs(by - adjustedZy) < PLAYER_HEIGHT / 2
   );
 }
-
 
 function createZombie(wave, x, y) {
   const r = Math.random();
@@ -318,9 +319,14 @@ function spawnBullets() {
     bulletEl.className = "bullet";
     gameEl.appendChild(bulletEl);
 
+    const startX = gunEl ? gunTipX : player.x;
+    const startY = gunEl
+      ? gunTipY
+      : player.y + PLAYER_HITBOX_OFFSET_Y;
+
     const bullet = {
-      x: player.x,
-      y: player.y + PLAYER_HITBOX_OFFSET_Y,
+      x: startX,
+      y: startY,
       vx: Math.cos(angle) * BULLET_SPEED,
       vy: Math.sin(angle) * BULLET_SPEED,
       spawnTime: performance.now(),
@@ -545,33 +551,27 @@ function update(timestamp) {
       openShop();
     }
   }
-playerEl.style.left = player.x - PLAYER_WIDTH / 2 + "px";
-playerEl.style.top = player.y - PLAYER_HEIGHT + "px";
-playerEl.style.scale = player.facing === 1 ? "1" : "-1 1";
 
+  playerEl.style.left = player.x - PLAYER_WIDTH / 2 + "px";
+  playerEl.style.top = player.y - PLAYER_HEIGHT + "px";
+  playerEl.style.scale = player.facing === 1 ? "1" : "-1 1";
 
-if (keys["a"]) {
-  player.x -= player.speed;
-  player.facing = -1;
-}
-if (keys["d"]) {
-  player.x += player.speed;
-  player.facing = 1;
-}
+  if (gunEl) {
+    const offsetX = player.facing === 1 ? 20 : -20;
+    const offsetY = -30;
+    const gunX = player.x + offsetX;
+    const gunY = player.y + PLAYER_HITBOX_OFFSET_Y + offsetY;
 
+    gunEl.style.left = gunX + "px";
+    gunEl.style.top = gunY + "px";
 
-if (gunEl) {
-  const offsetX = player.facing === 1 ? 20 : -20;
-  const offsetY = -30;
-  const gunX = player.x + offsetX;
-  const gunY = player.y + PLAYER_HITBOX_OFFSET_Y + offsetY;
+    const angleDeg = player.facing === 1 ? 0 : 180;
+    gunEl.style.transform = `rotate(${angleDeg}deg)`;
 
-  gunEl.style.left = gunX + "px";
-  gunEl.style.top = gunY + "px";
-
-  const angleDeg = player.facing === 1 ? 0 : 180;
-  gunEl.style.transform = `rotate(${angleDeg}deg)`;
-}
+    const tipOffset = 20;
+    gunTipX = gunX + (player.facing === 1 ? tipOffset : -tipOffset);
+    gunTipY = gunY;
+  }
 
   if (shieldActive) {
     shieldAuraEl.style.left = player.x - 60 + "px";
@@ -589,34 +589,32 @@ if (gunEl) {
 
     swordEl.style.display = "block";
 
-const offsetX = player.facing === 1 ? 30 : -30;
-const offsetY = 10; 
-const swordX = player.x + offsetX;
-const swordY =
-  player.y +
-  PLAYER_HITBOX_OFFSET_Y -
-  PLAYER_HEIGHT / 2 +
-  offsetY;
-
+    const offsetX = player.facing === 1 ? 30 : -30;
+    const offsetY = 10;
+    const swordX = player.x + offsetX;
+    const swordY =
+      player.y +
+      PLAYER_HITBOX_OFFSET_Y -
+      PLAYER_HEIGHT / 2 +
+      offsetY;
 
     swordEl.style.left = swordX + "px";
     swordEl.style.top = swordY + "px";
     swordEl.style.transform = `rotate(${angle}deg)`;
 
-if (!swordEl._didHit) {
-  const swordRange = 40;
-  zombies.forEach((z) => {
-    const dx = z.x - swordX;
-    const dy = (z.y + ZOMBIE_HITBOX_OFFSET_Y) - swordY;
-    const dist = Math.hypot(dx, dy);
-    if (dist < swordRange) {
-      const dmg = player.damage * 1.8;
-      z.hp -= dmg;
+    if (!swordEl._didHit) {
+      const swordRange = 40;
+      zombies.forEach((z) => {
+        const dx = z.x - swordX;
+        const dy = (z.y + ZOMBIE_HITBOX_OFFSET_Y) - swordY;
+        const dist = Math.hypot(dx, dy);
+        if (dist < swordRange) {
+          const dmg = player.damage * 1.8;
+          z.hp -= dmg;
+        }
+      });
+      swordEl._didHit = true;
     }
-  });
-  swordEl._didHit = true;
-}
-
 
     if (attackPhase >= 1) {
       isMeleeAttacking = false;
