@@ -105,6 +105,7 @@ h1 {
   min-width: 180px;
 }
 
+
 .panel {
   position: absolute;
   left: 50%;
@@ -224,4 +225,16 @@ button.primary {
   box-shadow: 0 0 18px #4fd5ff;
   pointer-events: none;
   z-index: 1;
+}
+.gun {
+  position: absolute;
+  width: 40px; 
+  height: 20px;
+  background-image: url("./gun.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transform-origin: 8px 10px; 
+  pointer-events: none;
+  z-index: 4;
 }
