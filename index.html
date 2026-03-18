@@ -9,14 +9,9 @@
     <h1>Zombie Apocalypse</h1>
 
     <div id="game">
-      <div id="player" class="stickman">
-        <div class="head"></div>
-        <div class="body"></div>
-        <div class="arm left-arm"></div>
-        <div class="arm right-arm"></div>
-        <div class="leg left-leg"></div>
-        <div class="leg right-leg"></div>
-      </div>
+      <div id="player" class="player"></div>
+      <div id="sword" class="sword"></div>
+      <div id="shield-aura" class="shield-aura hidden"></div>
       <div id="enemy" class="zombie walker"></div>
     </div>
 
@@ -64,6 +59,13 @@
         <button id="shop-headshot">+5% Headshot (30c)</button>
       </div>
       <button id="shop-start" class="primary">Start Next Wave</button>
+    </div>
+    <div id="game-over-panel" class="panel hidden">
+      <h2>Game Over</h2>
+      <p id="game-over-text">You were eaten!</p>
+      <div class="button-row">
+        <button id="restart-btn" class="primary">Restart</button>
+      </div>
     </div>
 
     <p id="controls">
