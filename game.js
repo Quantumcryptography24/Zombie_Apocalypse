@@ -428,7 +428,7 @@ function update(timestamp) {
       keys["a"] || keys["d"] || keys["w"] || keys["s"];
 
     if (isMoving) {
-      if (timestamp - lastWalkFrameTime > 1000) {
+      if (timestamp - lastWalkFrameTime > 100) {
         lastWalkFrameTime = timestamp;
         usingWalkSprite = !usingWalkSprite;
       }
