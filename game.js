@@ -410,16 +410,16 @@ function update(timestamp) {
   }
 
   if (!upgradeOpen && !shopOpen) {
-    if (keys["a"]) {
+    if (keys["a"] or ["left"]) {
       player.x -= player.speed;
       player.facing = -1;
     }
-    if (keys["d"]) {
+    if (keys["d"] or ["right"]) {
       player.x += player.speed;
       player.facing = 1;
     }
-    if (keys["w"]) player.y -= player.speed;
-    if (keys["s"]) player.y += player.speed;
+    if (keys["w"] or ["up"]) player.y -= player.speed;
+    if (keys["s"] or ["down"]) player.y += player.speed;
 
     const isMoving =
   keys["a"] || keys["d"] || keys["w"] || keys["s"];
