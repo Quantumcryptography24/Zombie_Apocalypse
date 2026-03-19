@@ -421,6 +421,16 @@ function update(timestamp) {
     if (keys["w"]) player.y -= player.speed;
     if (keys["s"]) player.y += player.speed;
 
+    const isMoving =
+  keys["a"] || keys["d"] || keys["w"] || keys["s"];
+
+if (isMoving) {
+  playerEl.classList.add("walking");
+} else {
+  playerEl.classList.remove("walking");
+}
+
+
     const halfW = PLAYER_WIDTH / 2;
     const halfH = PLAYER_HEIGHT / 2;
     if (player.x < halfW) player.x = halfW;
