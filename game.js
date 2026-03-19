@@ -12,7 +12,7 @@ let player = {
   y: 300,
   hp: 100,
   maxHp: 100,
-  speed: 10,
+  speed: 4,
   damage: 15,
   level: 1,
   xp: 0,
