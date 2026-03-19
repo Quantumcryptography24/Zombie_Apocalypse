@@ -39,6 +39,9 @@ const ORB_RADIUS = 6;
 let gunTipX = 0;
 let gunTipY = 0;
 
+let lastWalkFrameTime = 0;
+let usingWalkSprite = false;
+
 const playerEl = document.getElementById("player");
 const gunEl = document.getElementById("gun");
 const swordEl = document.getElementById("sword");
@@ -425,9 +428,16 @@ function update(timestamp) {
       keys["a"] || keys["d"] || keys["w"] || keys["s"];
 
     if (isMoving) {
-      playerEl.classList.add("walking");
+      if (timestamp - lastWalkFrameTime > 1000) {
+        lastWalkFrameTime = timestamp;
+        usingWalkSprite = !usingWalkSprite;
+      }
+      playerEl.style.backgroundImage = usingWalkSprite
+        ? 'url("./character_walk.png")'
+        : 'url("./Character_skin.png")';
     } else {
-      playerEl.classList.remove("walking");
+      usingWalkSprite = false;
+      playerEl.style.backgroundImage = 'url("./Character_skin.png")';
     }
 
     const halfW = PLAYER_WIDTH / 2;
