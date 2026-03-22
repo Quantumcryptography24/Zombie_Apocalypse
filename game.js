@@ -413,19 +413,19 @@ function update(timestamp) {
   }
 
   if (!upgradeOpen && !shopOpen) {
-    if (keys["a"]) {
+    if (keys["a"] || keys["ArrowLeft"]) {
       player.x -= player.speed;
       player.facing = -1;
     }
-    if (keys["d"]) {
+    if (keys["d"] || keys["ArrowRight"]) {
       player.x += player.speed;
       player.facing = 1;
     }
-    if (keys["w"]) player.y -= player.speed;
-    if (keys["s"]) player.y += player.speed;
+    if (keys["w"] || keys["ArrowUp"]) player.y -= player.speed;
+    if (keys["s"] || keys["ArrowDown"]) player.y += player.speed;
 
     const isMoving =
-      keys["a"] || keys["d"] || keys["w"] || keys["s"];
+      keys["a"] || keys["d"] || keys["w"] || keys["s"] || keys["ArrowUp"] || keys["ArrowDown"] || keys["ArrowLeft"] || keys["ArrowRight"];
 
     if (isMoving) {
       if (timestamp - lastWalkFrameTime > 100) {
